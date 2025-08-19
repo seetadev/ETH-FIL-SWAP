@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Card, ListGroup } from 'react-bootstrap';
 import { ethers, parseEther,formatEther} from 'ethers';
-import contractAddress from '../artifacts/Contracts/SwapAuction.sol/SwapAuction.json';
+import contractAddress from '../SwapAuction.json';
 
 const CONTRACTADDRESS="0xF7015cC82A0980152521fc3B31A5bb267A625f35"
 const Swap = () => {
