@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Card, ListGroup } from 'react-bootstrap';
 import { ethers, parseEther,formatEther} from 'ethers';
 import contractAddress from '../SwapAuction.json';
+import CrossChainSwap from './CrossChainSwap';
 
 const CONTRACTADDRESS="0xF7015cC82A0980152521fc3B31A5bb267A625f35"
 const Swap = () => {
     const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
+    const [address, setAddress] = useState(null);
     const [contract, setContract] = useState(null);
     const [auctions, setAuctions] = useState([]);
+    const [endedAuctions, setEndedAuctions] = useState([]);
+    const [selectedAuction, setSelectedAuction] = useState(null);
+    const initRan = useRef(false);
 
     const [form, setForm] = useState({
         tokenA: '',
@@ -22,31 +27,36 @@ const Swap = () => {
         const init = async () => {
             if (window.ethereum) {
                 const provider = new ethers.BrowserProvider(window.ethereum);
-                console.log("Provider:", provider);
                 setProvider(provider);
-                const signer =await provider.getSigner();
-                console.log("Signer:", signer);
+                const signer = await provider.getSigner();
+                const address = await signer.getAddress();
+                setAddress(address);
                 setSigner(signer);
-                console.log("Contract Address:", CONTRACTADDRESS);
-                console.log("Contract ABI:", contractAddress.abi);
                 const contract = new ethers.Contract(CONTRACTADDRESS, contractAddress.abi, signer);
-                console.log(contract);
                 setContract(contract);
                 await loadAuctions(contract);
             }
         };
-        init();
+        if (!initRan.current) {
+            initRan.current = true;
+            init();
+        }
     }, []);
 
     const loadAuctions = async (contract) => {
         const auctionCounter = await contract.auctionCounter();
-        let auctions = [];
+        let active = [];
+        let ended = [];
         for (let i = 1; i <= auctionCounter; i++) {
             const auction = await contract.auctions(i);
-            // console.log("Auction while pushing:", auction);
-            auctions.push({ id: i, ...auction });
+            if (auction.ended) {
+                ended.push({ id: i, ...auction });
+            } else {
+                active.push({ id: i, ...auction });
+            }
         }
-        setAuctions(auctions.filter(a => !a[8]));
+        setAuctions(active);
+        setEndedAuctions(ended);
     };
 
     const handleInputChange = (e) => {
@@ -101,6 +111,10 @@ const Swap = () => {
         }
     }
 
+    if (selectedAuction) {
+        return <CrossChainSwap auction={selectedAuction} provider={provider} signer={signer} />;
+    }
+
 
     return (
         <div className="container mt-5">
@@ -136,11 +150,10 @@ const Swap = () => {
             <h2 className="mt-5">Active Auctions</h2>
             <ListGroup>
                 {auctions.map(auction => (
-                    console.log("auctioin   :", auction),
                     <ListGroup.Item key={auction.id}>
                         <h5>Auction #{auction.id}</h5>
                         <p>Maker: {auction[0]}</p>
-                        <p>Selling: {formatEther(auction[2])} of {auction[2]}</p>
+                        <p>Selling: {formatEther(auction[2])} of {auction[1]}</p>
                         <p>Buying: at least { formatEther(auction[4])} of {auction[3]}</p>
                         <p>Highest Bid: { formatEther(auction[7])} by {auction[6]}</p>
                         <p>End Time: {new Date(Number(auction[5]) * 1000).toLocaleString()}</p>
@@ -153,6 +166,52 @@ const Swap = () => {
                         <Button className="mt-2" variant="danger" onClick={() => endAuction(auction.id)}>End Auction</Button>
                     </ListGroup.Item>
                 ))}
+            </ListGroup>
+
+            <h2 className="mt-5">Ongoing Swaps</h2>
+            <ListGroup>
+                {endedAuctions.map(auction => {
+                    const isUserInAuction =
+                        address &&
+                        (address.toLowerCase() === auction[0].toLowerCase() ||
+                        address.toLowerCase() === auction[6].toLowerCase());
+                    if (!isUserInAuction) return null;
+                    return (
+                        <ListGroup.Item
+                            key={auction.id}
+                            action
+                            onClick={() =>
+                                setSelectedAuction({
+                                    id: auction.id,
+                                    maker: auction[0],
+                                    tokenA: auction[1],
+                                    amountA: auction[2],
+                                    tokenB: auction[3],
+                                    minAmountB: auction[4],
+                                    endTime: auction[5],
+                                    highestBidder: auction[6],
+                                    highestBid: auction[7],
+                                    ended: auction[8]
+                                })
+                            }
+                        >
+                            <h5>Auction #{auction.id}</h5>
+                            <p>Maker: {auction[0]}</p>
+                            <p>Taker: {auction[6]}</p>
+
+                            {address.toLowerCase() === auction[0].toLowerCase() ? (
+                                <p style={{ color: "green" }}>         
+                                    <strong>Maker</strong>
+                                </p>   
+                            ) : (
+                                <p style={{ color: "red" }}>
+                                    <strong>Taker</strong>
+                                </p>
+                            )}
+                        </ListGroup.Item>
+                    );
+                })}
+
             </ListGroup>
         </div>
     );
