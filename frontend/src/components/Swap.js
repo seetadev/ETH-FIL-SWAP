@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Card, ListGroup } from 'react-bootstrap';
 import { ethers, parseEther,formatEther} from 'ethers';
@@ -5,15 +6,13 @@ import contractAddress from '../SwapAuction.json';
 import CrossChainSwap from './CrossChainSwap';
 
 const CONTRACTADDRESS="0xF7015cC82A0980152521fc3B31A5bb267A625f35"
-const Swap = () => {
+const Swap = ({ account, network }) => {
     const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
-    const [address, setAddress] = useState(null);
     const [contract, setContract] = useState(null);
     const [auctions, setAuctions] = useState([]);
     const [endedAuctions, setEndedAuctions] = useState([]);
     const [selectedAuction, setSelectedAuction] = useState(null);
-    const initRan = useRef(false);
 
     const [form, setForm] = useState({
         tokenA: '',
@@ -25,36 +24,42 @@ const Swap = () => {
 
     useEffect(() => {
         const init = async () => {
-            if (window.ethereum) {
+            if (account) {
                 const provider = new ethers.BrowserProvider(window.ethereum);
                 setProvider(provider);
                 const signer = await provider.getSigner();
-                const address = await signer.getAddress();
-                setAddress(address);
                 setSigner(signer);
+                console.log("Signer set:", signer);
                 const contract = new ethers.Contract(CONTRACTADDRESS, contractAddress.abi, signer);
                 setContract(contract);
-                await loadAuctions(contract);
+                console.log("Contract set:", contract);
+                console.log("account:", account);
+                await loadAuctions();
             }
         };
-        if (!initRan.current) {
-            initRan.current = true;
-            init();
-        }
-    }, []);
+        init();
+    }, [account]);
 
-    const loadAuctions = async (contract) => {
-        const auctionCounter = await contract.auctionCounter();
+
+    
+
+    const loadAuctions = async () => {
+        const provider = new ethers.JsonRpcProvider('https://ethereum-sepolia-rpc.publicnode.com');
+        const general_contract = new ethers.Contract(CONTRACTADDRESS, contractAddress.abi, provider);
+        const auctionCounter = await general_contract.auctionCounter();
         let active = [];
         let ended = [];
+        console.log("Total Auctions:", auctionCounter.toString());
         for (let i = 1; i <= auctionCounter; i++) {
-            const auction = await contract.auctions(i);
+            const auction = await general_contract.auctions(i);
             if (auction.ended) {
                 ended.push({ id: i, ...auction });
             } else {
                 active.push({ id: i, ...auction });
             }
         }
+        console.log("Active Auctions:", active);
+        console.log("Ended Auctions:", ended);
         setAuctions(active);
         setEndedAuctions(ended);
     };
@@ -71,6 +76,7 @@ const Swap = () => {
         if (contract) {
             try {
                 console.log("create Auction")
+                console.log("form",form)
                 const tx = await contract.createAuction(
                     form.tokenA,
                     parseEther(form.amountA.toString()),
@@ -80,7 +86,7 @@ const Swap = () => {
                 );
                 await tx.wait();
                 console.log(tx);
-                await loadAuctions(contract);
+                await loadAuctions();
             } catch (error) {
                 console.error("Error creating auction:", error);
             }
@@ -92,7 +98,7 @@ const Swap = () => {
             try {
                 const tx = await contract.bid(auctionId,parseEther(amount));
                 await tx.wait();
-                loadAuctions(contract);
+                loadAuctions();
             } catch (error) {
                 console.error(error);
             }
@@ -104,7 +110,7 @@ const Swap = () => {
             try {
                 const tx = await contract.endAuction(auctionId);
                 await tx.wait();
-                loadAuctions(contract);
+                loadAuctions();
             } catch (error) {
                 console.error("Error ending auction:", error);
             }
@@ -112,7 +118,9 @@ const Swap = () => {
     }
 
     if (selectedAuction) {
-        return <CrossChainSwap auction={selectedAuction} provider={provider} signer={signer} />;
+        console.log("Rendering CrossChainSwap for selected auction:", selectedAuction);
+        console.log("Account:", account);
+        return <CrossChainSwap auction={selectedAuction} provider={provider} signer={signer} account={account} />;
     }
 
 
@@ -123,16 +131,22 @@ const Swap = () => {
                 <Card.Body>
                     <Form onSubmit={createAuction}>
                         <Form.Group className="mb-3">
-                            <Form.Label>Token to Sell (Address)</Form.Label>
+                            <Form.Label>Token to Sell (Address on Sepolia)</Form.Label>
                             <Form.Control type="text" name="tokenA" placeholder="0x..." onChange={handleInputChange} value={form.tokenA} />
+                            <Form.Text className="text-muted">
+                                The Maker's tokens will be escrowed on the Sepolia network.
+                            </Form.Text>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Amount to Sell</Form.Label>
                             <Form.Control type="text" name="amountA" placeholder="1.0" onChange={handleInputChange} value={form.amountA} />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Token to Buy (Address)</Form.Label>
+                            <Form.Label>Token to Buy (Address on Filecoin)</Form.Label>
                             <Form.Control type="text" name="tokenB" placeholder="0x..." onChange={handleInputChange} value={form.tokenB} />
+                            <Form.Text className="text-muted">
+                                The Taker's tokens will be escrowed on the Filecoin Calibration network.
+                            </Form.Text>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Minimum Amount to Buy</Form.Label>
@@ -172,11 +186,12 @@ const Swap = () => {
             <ListGroup>
                 {endedAuctions.map(auction => {
                     const isUserInAuction =
-                        address &&
-                        (address.toLowerCase() === auction[0].toLowerCase() ||
-                        address.toLowerCase() === auction[6].toLowerCase());
+                        account &&
+                        (account.toLowerCase() === auction[0].toLowerCase() ||
+                        account.toLowerCase() === auction[6].toLowerCase());
                     if (!isUserInAuction) return null;
                     return (
+                        console.log("Rendering ended auction for user"),
                         <ListGroup.Item
                             key={auction.id}
                             action
@@ -199,7 +214,7 @@ const Swap = () => {
                             <p>Maker: {auction[0]}</p>
                             <p>Taker: {auction[6]}</p>
 
-                            {address.toLowerCase() === auction[0].toLowerCase() ? (
+                            {account.toLowerCase() === auction[0].toLowerCase() ? (
                                 <p style={{ color: "green" }}>         
                                     <strong>Maker</strong>
                                 </p>   
