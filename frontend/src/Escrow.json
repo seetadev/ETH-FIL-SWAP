@@ -11,6 +11,12 @@
           "internalType": "bytes32",
           "name": "swapId",
           "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
         }
       ],
       "name": "SwapClaimed",
@@ -23,6 +29,12 @@
           "indexed": true,
           "internalType": "bytes32",
           "name": "swapId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "hashedSecret",
           "type": "bytes32"
         }
       ],

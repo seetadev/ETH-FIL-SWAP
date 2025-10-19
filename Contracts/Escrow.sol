@@ -17,8 +17,8 @@ contract Escrow {
 
     mapping(bytes32 => Swap) public swaps;
 
-    event SwapInitiated(bytes32 indexed swapId);
-    event SwapClaimed(bytes32 indexed swapId);
+    event SwapInitiated(bytes32 indexed swapId, bytes32 hashedSecret);
+    event SwapClaimed(bytes32 indexed swapId, bytes32 secret);
     event SwapRefunded(bytes32 indexed swapId);
 
     function initiate(
@@ -44,7 +44,7 @@ contract Escrow {
         });
 
         IERC20(token).transferFrom(msg.sender, address(this), amount);
-        emit SwapInitiated(swapId);
+        emit SwapInitiated(swapId, hashedSecret);
     }
 
     function claim(bytes32 swapId, bytes32 secret) external {
@@ -57,7 +57,7 @@ contract Escrow {
 
         swap.claimed = true;
         IERC20(swap.token).transfer(swap.recipient, swap.amount);
-        emit SwapClaimed(swapId);
+        emit SwapClaimed(swapId, bytes32(secret));
     }
 
     function refund(bytes32 swapId) external {

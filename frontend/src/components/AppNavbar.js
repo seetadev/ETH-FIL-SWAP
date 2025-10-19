@@ -1,31 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Navbar, Nav, Button } from 'react-bootstrap';
-import { ethers } from 'ethers';
 
-const AppNavbar = () => {
-    const [account, setAccount] = useState(null);
-    const [network, setNetwork] = useState(null);
-
-    const connectWallet = async () => {
-        if (window.ethereum) {
-            try {
-                const provider = new ethers.BrowserProvider(window.ethereum)
-                await provider.send("eth_requestAccounts", []);
-                const signer =await provider.getSigner();
-                // console.log("Signer:", signer);
-                const address = await signer.getAddress();
-                // console.log("Connected to wallet:", address);
-                setAccount(address);
-                const network = await provider.getNetwork();
-                setNetwork(network.name);
-            } catch (error) {
-                console.error("Error connecting to wallet:", error);
-            }
-        } else {
-            alert("Please install MetaMask!");
-        }
-    };
+const AppNavbar = ({ account, network, connectWallet, disconnectWallet }) => {
 
     return (
         <Navbar bg="dark" variant="dark" expand="lg">
@@ -36,9 +13,12 @@ const AppNavbar = () => {
                 </Nav>
                 <Nav>
                     {account ? (
-                        <Navbar.Text>
-                            Signed in as: {account.substring(0, 6)}...{account.substring(account.length - 4)} ({network})
-                        </Navbar.Text>
+                        <>
+                            <Navbar.Text>
+                                Signed in as: {account.substring(0, 6)}...{account.substring(account.length - 4)} ({network})
+                            </Navbar.Text>
+                            <Button variant="outline-light" onClick={disconnectWallet} style={{marginLeft: '10px'}}>Disconnect</Button>
+                        </>
                     ) : (
                         <Button variant="outline-light" onClick={connectWallet}>Connect Wallet</Button>
                     )}
