@@ -82,7 +82,7 @@ const TakerView = ({ auction, contractChainA, contractChainB, contractChainAWith
                         const swapDetails = await contractChainA.swaps(currentSwapId);
                         if (swapDetails.recipient.toLowerCase() === account.toLowerCase()) {
                             setHashedSecret(swapDetails.hashedSecret);
-                            setSwapState('None');
+                            setSwapState('Initiated on Chain A');
                         }
                     }
                 }
