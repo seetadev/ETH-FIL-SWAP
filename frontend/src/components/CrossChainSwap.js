@@ -90,39 +90,30 @@ const CrossChainSwap = ({ auction, provider, signer, account }) => {
                 </ul>
 
                 <hr />
-                {swapCompletionStatus === 'Swap Complete' ? (
-                    <Alert variant="success">Swap Complete!</Alert>
-                ) : (
-                    <>
-                        <h5>Actions:</h5>
-                        {!userRole && <p>Connecting to wallet to determine your role...</p>}
-                        {userRole === 'maker' && 
-                            <MakerView 
-                                auction={auction} 
-                                contractChainAWithSigner={contractChainAWithSigner} 
-                                contractChainB={contractChainB} 
-                                contractChainA={contractChainA} 
-                                contractChainBWithSigner={contractChainBWithSigner} 
-                                account={account}
-                                signer={signer}
-                                swapState={makerSwapState}
-                                setSwapState={setMakerSwapState}
-                            />}
-                        {userRole === 'taker' && 
-                            <TakerView 
-                                auction={auction} 
-                                contractChainA={contractChainA} 
-                                contractChainB={contractChainB} 
-                                contractChainAWithSigner={contractChainAWithSigner} 
-                                contractChainBWithSigner={contractChainBWithSigner} 
-                                account={account}
-                                signer={signer}
-                                swapState={takerSwapState}
-                                setSwapState={setTakerSwapState}
-                            />}
-                        {userRole && userRole !== 'maker' && userRole !== 'taker' && <p>You are not a participant in this swap.</p>}
-                    </>
-                )}
+
+                <h5>Actions:</h5>
+                {!userRole && <p>Connecting to wallet to determine your role...</p>}
+                {userRole === 'maker' && 
+                    <MakerView 
+                        auction={auction} 
+                        contractChainAWithSigner={contractChainAWithSigner} 
+                        contractChainB={contractChainB} 
+                        contractChainA={contractChainA} 
+                        contractChainBWithSigner={contractChainBWithSigner} 
+                        account={account}
+                        signer={signer}
+                    />}
+                {userRole === 'taker' && 
+                    <TakerView 
+                        auction={auction} 
+                        contractChainA={contractChainA} 
+                        contractChainB={contractChainB} 
+                        contractChainAWithSigner={contractChainAWithSigner} 
+                        contractChainBWithSigner={contractChainBWithSigner} 
+                        account={account}
+                        signer={signer}
+                    />}
+                {userRole && userRole !== 'maker' && userRole !== 'taker' && <p>You are not a participant in this swap.</p>}
 
             </Card.Body>
         </Card>
