@@ -67,7 +67,7 @@ This script will initiate the swap on the Sepolia network, which will then be re
 ## Demo 
 [Demo Video on Testnet](https://www.youtube.com/watch?v=kHbN2B-I-sI) 
 
-Trying to Go live on Mainnet during Thanksgiving week :)
+Going live on Mainnet after Thanksgiving week :)
 
 [Project Screencasts](https://drive.google.com/file/d/1J1I9ig7NKCyU_gXo_vgbwiq3GraFuRMZ/view)
 
