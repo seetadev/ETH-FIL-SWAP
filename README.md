@@ -9,6 +9,9 @@ The process involves two parties, Party A and Party B, who wish to swap tokens. 
 
 The swap is "atomic" because it is executed as a single, indivisible transaction. If any part of the swap fails, the entire transaction is rolled back, and the tokens are returned to their original owners. This is made possible through the use of a shared secret that both parties must provide to unlock the funds.
 
+[Document on the Implementation Plan](https://docs.google.com/document/d/1A47U3gIIVt4i2WRAlndYTpDqO0upRDxOTfoBPUqEziQ/edit?tab=t.0#heading=h.vz2oj8np5cf2)
+
+
 ## Getting Started
 
 
@@ -62,4 +65,13 @@ This script will initiate the swap on the Sepolia network, which will then be re
 
 
 ## Demo 
-[Demo Video](https://drive.google.com/file/d/1J1I9ig7NKCyU_gXo_vgbwiq3GraFuRMZ/view)
+[Demo Video on Testnet](https://www.youtube.com/watch?v=kHbN2B-I-sI) 
+
+Trying to Go live on Mainnet during Thanksgiving week :)
+
+[Project Screencasts](https://drive.google.com/file/d/1J1I9ig7NKCyU_gXo_vgbwiq3GraFuRMZ/view)
+
+## Twitter Discussion on Mainnet deployment planning
+
+Please visit https://x.com/momack28/status/1992768978155135159
+
