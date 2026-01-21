@@ -5,7 +5,6 @@ const AppNavbar = ({ account, network, connectWallet, disconnectWallet }) => {
     <nav className="backdrop-blur-xl bg-white/10 border-b border-white/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
@@ -14,7 +13,6 @@ const AppNavbar = ({ account, network, connectWallet, disconnectWallet }) => {
             </div>
           </div>
 
-          {/* Wallet Section */}
           <div className="flex items-center space-x-4">
             {account ? (
               <>

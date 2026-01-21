@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Form, Button, Card, ListGroup } from "react-bootstrap";
-import { ethers, parseEther, formatEther } from "ethers";
+import React, { useState, useEffect } from "react";
+import { ethers, parseEther } from "ethers";
 import contractAddress from "../SwapAuction.json";
 import CrossChainSwap from "./CrossChainSwap";
+import CreateAuctionForm from "./CreateAuctionForm";
+import AuctionCard from "./AuctionCard";
+import OngoingSwapCard from "./OngoingSwapCard";
+import EmptyState from "./EmptyState";
+import { Flame, Zap, Package, ArrowLeftRight } from "lucide-react";
 
 const CONTRACTADDRESS = "0xF7015cC82A0980152521fc3B31A5bb267A625f35";
+
 const Swap = ({ account, network }) => {
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
@@ -123,11 +128,32 @@ const Swap = ({ account, network }) => {
     }
   };
 
-  if (selectedAuction) {
-    console.log(
-      "Rendering CrossChainSwap for selected auction:",
-      selectedAuction,
+  const handleSelectAuction = (auction) => {
+    console.log("Rendering CrossChainSwap for selected auction:", auction);
+    setSelectedAuction({
+      id: auction.id,
+      maker: auction[0],
+      tokenA: auction[1],
+      amountA: auction[2],
+      tokenB: auction[3],
+      minAmountB: auction[4],
+      endTime: auction[5],
+      highestBidder: auction[6],
+      highestBid: auction[7],
+      ended: auction[8],
+    });
+  };
+
+  // Filter ongoing swaps for current user
+  const userOngoingSwaps = endedAuctions.filter((auction) => {
+    return (
+      account &&
+      (account.toLowerCase() === auction[0].toLowerCase() ||
+        account.toLowerCase() === auction[6].toLowerCase())
     );
+  });
+
+  if (selectedAuction) {
     console.log("Account:", account);
     return (
       <CrossChainSwap
@@ -140,168 +166,68 @@ const Swap = ({ account, network }) => {
   }
 
   return (
-    <div className="container mt-5">
-      <Card>
-        <Card.Header>Create Swap Auction</Card.Header>
-        <Card.Body>
-          <Form onSubmit={createAuction}>
-            <Form.Group className="mb-3">
-              <Form.Label>Token to Sell (Address on Sepolia)</Form.Label>
-              <Form.Control
-                type="text"
-                name="tokenA"
-                placeholder="0x..."
-                onChange={handleInputChange}
-                value={form.tokenA}
-              />
-              <Form.Text className="text-muted">
-                The Maker's tokens will be escrowed on the Sepolia network.
-              </Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Amount to Sell</Form.Label>
-              <Form.Control
-                type="text"
-                name="amountA"
-                placeholder="1.0"
-                onChange={handleInputChange}
-                value={form.amountA}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Token to Buy (Address on Filecoin)</Form.Label>
-              <Form.Control
-                type="text"
-                name="tokenB"
-                placeholder="0x..."
-                onChange={handleInputChange}
-                value={form.tokenB}
-              />
-              <Form.Text className="text-muted">
-                The Taker's tokens will be escrowed on the Filecoin Calibration
-                network.
-              </Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Minimum Amount to Buy</Form.Label>
-              <Form.Control
-                type="text"
-                name="minAmountB"
-                placeholder="0.5"
-                onChange={handleInputChange}
-                value={form.minAmountB}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Auction Duration (seconds)</Form.Label>
-              <Form.Control
-                type="text"
-                name="duration"
-                placeholder="3600"
-                onChange={handleInputChange}
-                value={form.duration}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">
-              Create Auction
-            </Button>
-          </Form>
-        </Card.Body>
-      </Card>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <CreateAuctionForm
+        form={form}
+        handleInputChange={handleInputChange}
+        createAuction={createAuction}
+      />
 
-      <h2 className="mt-5">Active Auctions</h2>
-      <ListGroup>
-        {auctions.map((auction) => (
-          <ListGroup.Item key={auction.id}>
-            <h5>Auction #{auction.id}</h5>
-            <p>Maker: {auction[0]}</p>
-            <p>
-              Selling: {formatEther(auction[2])} of {auction[1]}
-            </p>
-            <p>
-              Buying: at least {formatEther(auction[4])} of {auction[3]}
-            </p>
-            <p>
-              Highest Bid: {formatEther(auction[7])} by {auction[6]}
-            </p>
-            <p>
-              End Time: {new Date(Number(auction[5]) * 1000).toLocaleString()}
-            </p>
-            <Form
-              onSubmit={(e) => {
-                e.preventDefault();
-                bid(auction.id, e.target.elements.bidAmount.value);
-              }}
-            >
-              <Form.Group className="mb-3">
-                <Form.Control
-                  type="text"
-                  name="bidAmount"
-                  placeholder="Enter your bid"
-                />
-              </Form.Group>
-              <Button variant="success" type="submit">
-                Bid
-              </Button>
-            </Form>
-            <Button
-              className="mt-2"
-              variant="danger"
-              onClick={() => endAuction(auction.id)}
-            >
-              End Auction
-            </Button>
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
-
-      <h2 className="mt-5">Ongoing Swaps</h2>
-      <ListGroup>
-        {endedAuctions.map((auction) => {
-          const isUserInAuction =
-            account &&
-            (account.toLowerCase() === auction[0].toLowerCase() ||
-              account.toLowerCase() === auction[6].toLowerCase());
-          if (!isUserInAuction) return null;
-          return (
-            console.log("Rendering ended auction for user"),
-            (
-              <ListGroup.Item
+      <div className="mb-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+            <Flame className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Active Auctions</h2>
+        </div>
+        <div className="space-y-4">
+          {auctions.length === 0 ? (
+            <EmptyState
+              icon={<Package className="w-16 h-16 mx-auto mb-3 opacity-50" />}
+              title="No active auctions"
+              description="Create the first auction above"
+            />
+          ) : (
+            auctions.map((auction) => (
+              <AuctionCard
                 key={auction.id}
-                action
-                onClick={() =>
-                  setSelectedAuction({
-                    id: auction.id,
-                    maker: auction[0],
-                    tokenA: auction[1],
-                    amountA: auction[2],
-                    tokenB: auction[3],
-                    minAmountB: auction[4],
-                    endTime: auction[5],
-                    highestBidder: auction[6],
-                    highestBid: auction[7],
-                    ended: auction[8],
-                  })
-                }
-              >
-                <h5>Auction #{auction.id}</h5>
-                <p>Maker: {auction[0]}</p>
-                <p>Taker: {auction[6]}</p>
+                auction={auction}
+                bid={bid}
+                endAuction={endAuction}
+              />
+            ))
+          )}
+        </div>
+      </div>
 
-                {account.toLowerCase() === auction[0].toLowerCase() ? (
-                  <p style={{ color: "green" }}>
-                    <strong>Maker</strong>
-                  </p>
-                ) : (
-                  <p style={{ color: "red" }}>
-                    <strong>Taker</strong>
-                  </p>
-                )}
-              </ListGroup.Item>
-            )
-          );
-        })}
-      </ListGroup>
+      <div className="mb-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Ongoing Swaps</h2>
+        </div>
+        <div className="space-y-4">
+          {userOngoingSwaps.length === 0 ? (
+            <EmptyState
+              icon={
+                <ArrowLeftRight className="w-16 h-16 mx-auto mb-3 opacity-50" />
+              }
+              title="No ongoing swaps"
+              description="Your active swaps will appear here"
+            />
+          ) : (
+            userOngoingSwaps.map((auction) => (
+              <OngoingSwapCard
+                key={auction.id}
+                auction={auction}
+                account={account}
+                onClick={() => handleSelectAuction(auction)}
+              />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };
